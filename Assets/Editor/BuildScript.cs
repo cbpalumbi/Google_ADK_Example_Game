@@ -1,13 +1,12 @@
 using UnityEditor;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
-using System.Linq; // Required for .FirstOrDefault()
+using System.Linq; // Required for .Where() and .Select()
 
 public class BuildScript
 {
     // This is the method that will be called from the command line.
     // It takes the target platform (Windows/Linux) and output path.
-    // It should also be able to specify which scene to load first.
     public static void PerformBuild()
     {
         Debug.Log("BuildScript: Starting PerformBuild method.");
@@ -17,11 +16,10 @@ public class BuildScript
         Debug.Log($"BuildScript: Command-line arguments received: {string.Join(" ", args)}");
 
         // --- 1. Determine Target Platform ---
-        BuildTarget target = BuildTarget.StandaloneOSX; // Default to macOS
-        Debug.Log("BuildScript: Default build target set to macOS.");
+        BuildTarget target = BuildTarget.StandaloneWindows64; // Default to Windows 64-bit
+        Debug.Log("BuildScript: Default build target set to Windows 64-bit.");
 
         // Check for specific build target arguments
-        // You can extend this with more platforms as needed
         if (System.Array.IndexOf(args, "-buildWindowsPlayer") != -1)
         {
             target = BuildTarget.StandaloneWindows64;
@@ -32,50 +30,49 @@ public class BuildScript
             target = BuildTarget.StandaloneLinux64;
             Debug.Log("BuildScript: Build target set to Linux 64-bit based on arguments.");
         }
-        else if (System.Array.IndexOf(args, "-buildOSXPlayer") != -1) // Added explicit check for macOS
+        else if (System.Array.IndexOf(args, "-buildOSXPlayer") != -1)
         {
-            // Already default, but log it explicitly if argument is present
-            Debug.Log("BuildScript: Build target confirmed as macOS based on arguments.");
+            target = BuildTarget.StandaloneOSX; // Allow building for macOS if explicitly requested
+            Debug.Log("BuildScript: Build target set to macOS based on arguments.");
         }
         else
         {
-            Debug.Log("BuildScript: No specific build target argument found. Retaining default macOS.");
+            Debug.Log("BuildScript: No specific build target argument found. Retaining default Windows 64-bit.");
         }
 
         // --- 2. Determine Output Path ---
         string outputPath = "";
         for (int i = 0; i < args.Length; i++)
         {
-            if (args[i] == "-buildOSXPlayer" || args[i] == "-buildWindowsPlayer" || args[i] == "-buildLinuxPlayer")
+            // Prefer the path specified directly after the build player argument
+            if ((args[i] == "-buildOSXPlayer" || args[i] == "-buildWindowsPlayer" || args[i] == "-buildLinuxPlayer") && (i + 1 < args.Length))
             {
-                if (i + 1 < args.Length)
+                outputPath = args[i + 1];
+                // Ensure the output path has a file extension for the executable
+                if (target == BuildTarget.StandaloneOSX)
                 {
-                    outputPath = args[i + 1];
-                    // Ensure the output path has a file extension for the executable
-                    if (target == BuildTarget.StandaloneOSX)
+                    if (!outputPath.EndsWith(".app"))
                     {
-                        if (!outputPath.EndsWith(".app"))
-                        {
-                            outputPath += ".app";
-                        }
+                        outputPath += ".app";
                     }
-                    else if (target == BuildTarget.StandaloneWindows64)
-                    {
-                        if (!outputPath.EndsWith(".exe"))
-                        {
-                            outputPath += ".exe";
-                        }
-                    }
-                    Debug.Log($"BuildScript: Output path detected from build player argument: {outputPath}");
-                    break;
                 }
+                else if (target == BuildTarget.StandaloneWindows64)
+                {
+                    if (!outputPath.EndsWith(".exe"))
+                    {
+                        outputPath += ".exe";
+                    }
+                }
+                // Important: Ensure this path is absolute on the build machine (e.g., C:\Builds\MyGame\MyGame.exe)
+                Debug.Log($"BuildScript: Output path detected from build player argument: {outputPath}");
+                break; // Found the path, exit loop
             }
-            // Fallback for -outputPath argument (less common for Unity's -buildPlayer methods)
+            // Fallback for -outputPath argument (less common for Unity's -buildPlayer methods, but good to keep)
             if (args[i] == "-outputPath" && i + 1 < args.Length)
             {
                 outputPath = args[i + 1];
                 Debug.Log($"BuildScript: Output path detected via -outputPath argument: {outputPath}");
-                break;
+                break; // Found the path, exit loop
             }
         }
 
@@ -86,19 +83,7 @@ public class BuildScript
             return;
         }
 
-        // --- 3. Determine Initial Scene ---
-        string initialScenePath = "";
-        for (int i = 0; i < args.Length; i++)
-        {
-            if (args[i] == "-initialScene" && i + 1 < args.Length)
-            {
-                initialScenePath = args[i + 1];
-                Debug.Log($"BuildScript: Initial scene specified via -initialScene argument: {initialScenePath}");
-                break;
-            }
-        }
-
-        // Get the list of scenes included in the build settings
+        // --- 3. Determine Scenes To Build (ALL ENABLED SCENES) ---
         EditorBuildSettingsScene[] editorBuildSettingsScenes = EditorBuildSettings.scenes;
         Debug.Log($"BuildScript: Found {editorBuildSettingsScenes.Length} scenes in Editor Build Settings.");
         foreach (var scene in editorBuildSettingsScenes)
@@ -106,34 +91,8 @@ public class BuildScript
             Debug.Log($"BuildScript: Scene in Build Settings: {scene.path} (Enabled: {scene.enabled})");
         }
 
-        string[] scenesToBuild;
-        if (!string.IsNullOrEmpty(initialScenePath))
-        {
-            var targetScene = editorBuildSettingsScenes.FirstOrDefault(s => s.path.Contains(initialScenePath) && s.enabled);
-            if (targetScene != null)
-            {
-                Debug.Log($"BuildScript: Target initial scene '{initialScenePath}' found and enabled.");
-                scenesToBuild = new string[] { targetScene.path };
-                // Add other enabled scenes, excluding the initial scene if it's already there
-                foreach (var scene in editorBuildSettingsScenes)
-                {
-                    if (scene.enabled && scene.path != targetScene.path)
-                    {
-                        scenesToBuild = scenesToBuild.Concat(new string[] { scene.path }).ToArray();
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogWarning($"BuildScript: WARNING! Initial scene '{initialScenePath}' not found or not enabled in build settings. Building all enabled scenes in their default order instead.");
-                scenesToBuild = editorBuildSettingsScenes.Where(s => s.enabled).Select(s => s.path).ToArray();
-            }
-        }
-        else
-        {
-            Debug.Log("BuildScript: No initial scene specified via arguments. Building all enabled scenes in their default order.");
-            scenesToBuild = editorBuildSettingsScenes.Where(s => s.enabled).Select(s => s.path).ToArray();
-        }
+        // Now, simply collect all enabled scenes from the build settings
+        string[] scenesToBuild = editorBuildSettingsScenes.Where(s => s.enabled).Select(s => s.path).ToArray();
 
         if (scenesToBuild.Length == 0)
         {
