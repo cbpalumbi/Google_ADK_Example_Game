@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bbbf46729db20cb45a955d1219e29d74
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 198855
+  packageName: Books, Scrolls and Other Things (HDRP, URP, Standard)
+  packageVersion: 1.0
+  assetPath: Assets/Books/Prefabs/URP/Inkwell2.prefab
+  uploadId: 442234

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e89a215c8ef06a049bdc6baaea6faa8f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 198855
+  packageName: Books, Scrolls and Other Things (HDRP, URP, Standard)
+  packageVersion: 1.0
+  assetPath: Assets/Books/Prefabs/URP/Books/BookS3.prefab
+  uploadId: 442234

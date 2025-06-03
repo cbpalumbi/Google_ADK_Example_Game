@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1f9b0ab48ca8d95479d3a681c1e18613
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 198855
+  packageName: Books, Scrolls and Other Things (HDRP, URP, Standard)
+  packageVersion: 1.0
+  assetPath: Assets/Books/Materials/URP/Inkwell2.mat
+  uploadId: 442234

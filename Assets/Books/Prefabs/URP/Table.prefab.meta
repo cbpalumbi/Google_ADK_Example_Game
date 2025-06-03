@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: dde760bfb171d654aadcfe3b1eacc6d2
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 198855
+  packageName: Books, Scrolls and Other Things (HDRP, URP, Standard)
+  packageVersion: 1.0
+  assetPath: Assets/Books/Prefabs/URP/Table.prefab
+  uploadId: 442234
