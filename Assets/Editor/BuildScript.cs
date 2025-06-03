@@ -179,4 +179,4 @@ public class BuildScript
             EditorApplication.Exit(1); // Exit with error code
         }
     }
-} 
+}
