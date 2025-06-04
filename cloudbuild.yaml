@@ -13,7 +13,7 @@ steps:
   - |
     # This command uses the Cloud Build substitution for zone.
     # Add --log-http to get verbose output including API calls.
-    gcloud compute ssh unityadmin@unity-build-machine-windows2 \
+    gcloud compute ssh unityadmin@unity-build-mac \
       --zone=${_GCE_ZONE} \
       --project=${_PROJECT_ID} \
       --log-http \
