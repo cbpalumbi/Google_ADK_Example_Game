@@ -1,7 +1,7 @@
 # cloudbuild.yaml
 
 substitutions:
-  _GCE_ZONE: 'us-central1'
+  _GCE_ZONE: 'us-east4-c'
   _GCP_PROJECT_ID: 'cool-ruler-461702-p8'
   # _GCS_BUCKET_NAME is not needed for this simplified test
   # _UNITY_EDITOR_VERSION is not needed for this simplified test
