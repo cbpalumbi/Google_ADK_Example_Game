@@ -2,11 +2,7 @@
 
 substitutions:
   _GCE_ZONE: 'us-central1-b'
-  _PROJECT_ID: 'cool-ruler-461702-p8' # Changed from _GCP_PROJECT_ID
-  # _GCS_BUCKET_NAME is not needed for this simplified test
-  # _UNITY_EDITOR_VERSION is not needed for this simplified test
-  # _UNITY_PROJECT_NAME is not needed for this simplified test
-  # _UNITY_USERNAME is not needed for this simplified test
+  _PROJECT_ID: 'cool-ruler-461702-p8' # Ensure this is your actual Project ID string
 
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
@@ -16,12 +12,15 @@ steps:
   - '-c'
   - |
     # This command uses the Cloud Build substitution for zone.
-    # The inner command "echo 'Hello from GCE!'" contains no '$' symbols.
-    gcloud compute ssh unityadmin@unity-build-machine-windows2 --zone=${_GCE_ZONE} --project=${_PROJECT_ID} --command="echo 'Hello from GCE! This is a test.'" # Changed from _GCP_PROJECT_ID
+    # Add --log-http to get verbose output including API calls.
+    gcloud compute ssh unityadmin@unity-build-machine-windows2 \
+      --zone=${_GCE_ZONE} \
+      --project=${_PROJECT_ID} \
+      --log-http \
+      --command="echo 'Hello from GCE! This is a test.'"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=${_GCE_ZONE}'
-  - 'CLOUDSDK_CORE_PROJECT=${_PROJECT_ID}' # Changed from _GCP_PROJECT_ID
-  # No other env vars needed for this test
+  - 'CLOUDSDK_CORE_PROJECT=${_PROJECT_ID}'
 
 # logs_bucket is still required at the top level
 logs_bucket: 'gs://my_adk_unity_hackathon_builds_2025/cloudbuild-logs'
