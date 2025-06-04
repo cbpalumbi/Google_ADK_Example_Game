@@ -8,7 +8,6 @@ substitutions:
   # _UNITY_PROJECT_NAME is not needed for this simplified test
   # _UNITY_USERNAME is not needed for this simplified test
 
-serviceAccount: 'projects/106481734717/serviceAccounts/106481734717@cloudbuild.gserviceaccount.com'
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
   id: 'Test SSH Connection Only'
