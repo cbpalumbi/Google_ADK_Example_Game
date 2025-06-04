@@ -1,88 +1,27 @@
 # cloudbuild.yaml
 
-# --- 1. Define custom substitution variables here ---
 substitutions:
   _GCE_ZONE: 'us-east4-c'
   _GCP_PROJECT_ID: 'cool-ruler-461702-p8'
-  _GCS_BUCKET_NAME: 'my_adk_unity_hackathon_builds_2025'
+  # _GCS_BUCKET_NAME is not needed for this simplified test
+  # _UNITY_EDITOR_VERSION is not needed for this simplified test
+  # _UNITY_PROJECT_NAME is not needed for this simplified test
+  # _UNITY_USERNAME is not needed for this simplified test
 
 steps:
-# 2. Use the substitution variables within your steps
 - name: 'gcr.io/cloud-builders/gcloud'
-  id: 'Run Unity Build and Upload on GCE'
+  id: 'Test SSH Connection Only'
   entrypoint: 'bash'
   args:
   - '-c'
   - |
-    # Optional: You can add commands here to start your GCE instance if it's stopped.
-    # Example: gcloud compute instances start unity-build-machine-windows --zone=${_GCE_ZONE}
-
-    # SSH into the GCE instance and execute commands
-    # Note: We use ${VAR_NAME} for Cloud Build substitutions
-    gcloud compute ssh unity-build-machine-windows --zone=${_GCE_ZONE} --command="
-      echo 'Starting Unity build on GCE...'
-
-      # --- Define shell variables on the GCE instance using Cloud Build substitutions ---
-      # The Cloud Build substitution ${_GCS_BUCKET_NAME} gets replaced by its value *before* SSH.
-      # The remote shell then assigns that value to its local GCS_BUCKET_NAME variable.
-      UNITY_EXE=\"C:\\Program Files\\Unity\\Hub\\Editor\\6000.0.50f1\\Editor\\Unity.exe\"
-      PROJECT_PATH=\"C:\\UnityProjects\\Google_ADK_Example_Game\"
-      BUILD_OUTPUT_PATH=\"C:\\Users\\unityadmin\\Documents\\UnityBuilds\\MyGame\\Google_ADK_Example_Game.exe\"
-      GCS_BUCKET_NAME=\"${_GCS_BUCKET_NAME}\" # Cloud Build substitutes this; shell assigns it.
-      
-      # Generate a unique timestamp for the build folder in GCS
-      # (Using date +%Y%m%d%H%M%S for YYYYMMDDHHMMSS format)
-      BUILD_TIMESTAMP=\$(date +%Y%m%d%H%M%S) # <--- ESCAPE THE $ FOR SHELL COMMAND SUBSTITUTION
-      
-      # --- IMPORTANT: Escape the '$' for shell variables within a double-quoted string ---
-      # If you use '$GCS_BUCKET_NAME' directly inside double quotes, the *remote shell* will interpret it.
-      # So, you need to tell the remote shell to use *its* GCS_BUCKET_NAME variable by using \$
-      GCS_DESTINATION_PATH=\"gs://\${GCS_BUCKET_NAME}/builds/\${BUILD_TIMESTAMP}/Google_ADK_Example_Game.exe\"
-      
-      LOG_FILE=\"C:\\Users\\unityadmin\\Documents\\UnityLogs\\unity_build_log.txt\"
-
-      # --- Unity Build Command ---
-      echo 'Executing Unity build...'
-      \"${UNITY_EXE}\" -batchmode -quit -logFile \"${LOG_FILE}\" -projectPath \"${PROJECT_PATH}\" -executeMethod BuildScript.PerformBuild -buildWindowsPlayer \"${BUILD_OUTPUT_PATH}\"
-
-      UNITY_EXIT_CODE=\$? # <--- ESCAPE THE $ FOR SHELL SPECIAL VARIABLE
-
-      # Corrected: UNITY_EXIT_CODE should be UNITY_EXIT_CODE, not UNITY_EXIT_EXIT_CODE
-      echo 'Unity build command executed with exit code: '\$UNITY_EXIT_CODE # <--- ESCAPE THE $ FOR SHELL VARIABLE USE
-      
-      # --- GCS Upload Command (Conditional on Unity Build Success) ---
-      if [ \$UNITY_EXIT_CODE -eq 0 ]; then # <--- ESCAPE THE $ FOR SHELL VARIABLE USE
-        echo 'Unity build succeeded. Uploading to GCS...'
-        gsutil cp \"\${BUILD_OUTPUT_PATH}\" \"\${GCS_DESTINATION_PATH}\" # <--- ESCAPE THE $ FOR SHELL VARIABLES
-        GSUTIL_EXIT_CODE=\$? # <--- ESCAPE THE $ FOR SHELL SPECIAL VARIABLE
-
-        if [ \$GSUTIL_EXIT_CODE -eq 0 ]; then # <--- ESCAPE THE $ FOR SHELL VARIABLE USE
-          echo \"Build uploaded successfully to: \${GCS_DESTINATION_PATH}\" # <--- ESCAPE THE $ FOR SHELL VARIABLE USE
-          echo \"GCS_BUILD_PATH=\${GCS_DESTINATION_PATH}\" > /tmp/build_result.txt # <--- ESCAPE THE $ FOR SHELL VARIABLE USE
-        else
-          echo \"ERROR: gsutil upload failed with exit code: \${GSUTIL_EXIT_CODE}\" # <--- ESCAPE THE $ FOR SHELL VARIABLE USE
-          exit 1
-        fi
-      else
-        echo \"ERROR: Unity build failed with exit code: \${UNITY_EXIT_CODE}. Check \${LOG_FILE} for details.\" # <--- ESCAPE THE $ FOR SHELL VARIABLE USE
-        exit 1
-      fi
-    "
-  # Environment variables for gcloud compute ssh
+    # This command uses the Cloud Build substitution for zone.
+    # The inner command "echo 'Hello from GCE!'" contains no '$' symbols.
+    gcloud compute ssh unity-build-machine-windows --zone=${_GCE_ZONE} --command="echo 'Hello from GCE! This is a test.'"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=${_GCE_ZONE}'
   - 'CLOUDSDK_CORE_PROJECT=${_GCP_PROJECT_ID}'
+  # No other env vars needed for this test
 
-# 3. Second step to retrieve build path
-- name: 'gcr.io/cloud-builders/gcloud'
-  id: 'Get Build Path from GCE'
-  entrypoint: 'bash'
-  args:
-  - '-c'
-  - |
-    gcloud compute scp unity-build-machine-windows:/tmp/build_result.txt . --zone=${_GCE_ZONE}
-    BUILD_PATH=\$(cat build_result.txt | grep GCS_BUILD_PATH | cut -d'=' -f2) # <--- ESCAPE THE $ for shell command substitution
-    echo "Final GCS Build Path: \$BUILD_PATH" # <--- ESCAPE THE $ for shell variable use
-
-# 4. Top-level logs_bucket option
+# logs_bucket is still required at the top level
 logs_bucket: 'gs://my_adk_unity_hackathon_builds_2025/cloudbuild-logs'
