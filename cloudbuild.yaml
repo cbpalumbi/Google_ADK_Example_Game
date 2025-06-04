@@ -17,7 +17,7 @@ steps:
   - |
     # This command uses the Cloud Build substitution for zone.
     # The inner command "echo 'Hello from GCE!'" contains no '$' symbols.
-    gcloud compute ssh unity-build-machine-windows2 --zone=${_GCE_ZONE} --command="echo 'Hello from GCE! This is a test.'"
+    gcloud compute ssh unityadmin@unity-build-machine-windows2 --zone=${_GCE_ZONE} --command="echo 'Hello from GCE! This is a test.'"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=${_GCE_ZONE}'
   - 'CLOUDSDK_CORE_PROJECT=${_GCP_PROJECT_ID}'
