@@ -1,7 +1,7 @@
 # cloudbuild.yaml
 
 substitutions:
-  _GCE_ZONE: 'us-east4-c'
+  _GCE_ZONE: 'us-central1-b'
   _GCP_PROJECT_ID: 'cool-ruler-461702-p8'
   # _GCS_BUCKET_NAME is not needed for this simplified test
   # _UNITY_EDITOR_VERSION is not needed for this simplified test
@@ -17,7 +17,7 @@ steps:
   - |
     # This command uses the Cloud Build substitution for zone.
     # The inner command "echo 'Hello from GCE!'" contains no '$' symbols.
-    gcloud compute ssh unity-build-machine-windows --zone=${_GCE_ZONE} --command="echo 'Hello from GCE! This is a test.'"
+    gcloud compute ssh unity-build-machine-windows2 --zone=${_GCE_ZONE} --command="echo 'Hello from GCE! This is a test.'"
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=${_GCE_ZONE}'
   - 'CLOUDSDK_CORE_PROJECT=${_GCP_PROJECT_ID}'
