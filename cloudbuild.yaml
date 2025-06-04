@@ -80,7 +80,4 @@ steps:
     echo "Final GCS Build Path: $BUILD_PATH"
     # This BUILD_PATH variable is echoed to Cloud Build logs, which your Python agent can parse.
 
-options:
-  # Specify the GCS bucket where Cloud Build will store its logs.
-  # Use the SAME BUCKET NAME you created for your game builds.
-  logs_bucket: 'gs://my_adk_unity_hackathon_builds_2025/cloudbuild-logs' 
+logs_bucket: 'gs://my_adk_unity_hackathon_builds_2025/cloudbuild-logs'  
