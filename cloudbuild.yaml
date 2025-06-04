@@ -1,0 +1,81 @@
+# cloudbuild.yaml
+steps:
+# 1. SSH into the GCE instance to trigger Unity build AND upload to GCS
+# This step uses the 'gcloud' builder, which has the necessary tools to SSH into GCE.
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'Run Unity Build and Upload on GCE'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    # Optional: You can add commands here to start your GCE instance if it's stopped.
+    # Example: gcloud compute instances start unity-build-machine-windows --zone=YOUR_GCE_ZONE
+
+    # SSH into the GCE instance and execute commands
+    gcloud compute ssh unity-build-machine-windows --zone=YOUR_GCE_ZONE --command="
+      echo 'Starting Unity build on GCE...'
+
+      # Define variables for clarity and easy modification on GCE
+      UNITY_EXE=\"C:\\Program Files\\Unity\\Hub\\Editor\\6000.0.50f1\\Editor\\Unity.exe\"
+      PROJECT_PATH=\"C:\\UnityProjects\\Google_ADK_Example_Game\"
+      BUILD_OUTPUT_PATH=\"C:\\Users\\unityadmin\\Documents\\UnityBuilds\\MyGame\\Google_ADK_Example_Game.exe\"
+      # Make sure this GCS_BUCKET_NAME matches the bucket you created
+      GCS_BUCKET_NAME=\"my_adk_unity_hackathon_builds_2025\" # <--- REPLACE WITH YOUR ACTUAL BUCKET NAME
+
+      # Generate a unique timestamp for the build folder in GCS
+      # (Using date +%Y%m%d%H%M%S for YYYYMMDDHHMMSS format)
+      BUILD_TIMESTAMP=$(date +%Y%m%d%H%M%S) 
+      GCS_DESTINATION_PATH=\"gs://${GCS_BUCKET_NAME}/builds/${BUILD_TIMESTAMP}/Google_ADK_Example_Game.exe\"
+      LOG_FILE=\"C:\\Users\\unityadmin\\Documents\\UnityLogs\\unity_build_log.txt\"
+
+      # --- Unity Build Command ---
+      echo 'Executing Unity build...'
+      # This command runs on the GCE Windows VM
+      \"${UNITY_EXE}\" -batchmode -quit -logFile \"${LOG_FILE}\" -projectPath \"${PROJECT_PATH}\" -executeMethod BuildScript.PerformBuild -buildWindowsPlayer \"${BUILD_OUTPUT_PATH}\"
+
+      UNITY_EXIT_CODE=$? # Capture Unity's exit code (0 for success)
+
+      echo 'Unity build command executed with exit code: '$UNITY_EXIT_CODE
+
+      # --- GCS Upload Command (Conditional on Unity Build Success) ---
+      if [ $UNITY_EXIT_CODE -eq 0 ]; then
+        echo 'Unity build succeeded. Uploading to GCS...'
+        # Use gsutil to copy the built executable to your GCS bucket
+        # gsutil is typically pre-installed on GCE instances or easily installable via Cloud SDK.
+        gsutil cp \"${BUILD_OUTPUT_PATH}\" \"${GCS_DESTINATION_PATH}\"
+        GSUTIL_EXIT_CODE=$? # Capture gsutil's exit code
+
+        if [ $GSUTIL_EXIT_CODE -eq 0 ]; then
+          echo \"Build uploaded successfully to: ${GCS_DESTINATION_PATH}\"
+          # Important: Save the GCS path to a temporary file on GCE.
+          # We'll copy this file back to Cloud Build's workspace in the next step.
+          echo \"GCS_BUILD_PATH=${GCS_DESTINATION_PATH}\" > /tmp/build_result.txt
+        else
+          echo \"ERROR: gsutil upload failed with exit code: ${GSUTIL_EXIT_CODE}\"
+          exit 1 # Fail the Cloud Build step if upload fails
+        fi
+      else
+        echo \"ERROR: Unity build failed with exit code: ${UNITY_EXIT_CODE}. Check ${LOG_FILE} for details.\"
+        exit 1 # Fail the Cloud Build step if Unity build fails
+      fi
+    "
+  # Environment variables for gcloud compute ssh
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=us-east4-c' # <--- REPLACE WITH YOUR GCE INSTANCE'S ZONE (e.g., us-central1-a)
+  - 'CLOUDSDK_CORE_PROJECT=cool-ruler-461702-p8' # <--- REPLACE WITH YOUR GCP PROJECT ID
+
+# 2. Optional: Retrieve the GCS build path from the GCE instance
+# This step copies the temporary file from the GCE instance back to Cloud Build's workspace.
+# This makes the GCS path available in Cloud Build's logs and potentially to subsequent steps.
+- name: 'gcr.io/cloud-builders/gcloud'
+  id: 'Get Build Path from GCE'
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    # Copy the temporary file from GCE instance to Cloud Build's local workspace
+    gcloud compute scp unity-build-machine-windows:/tmp/build_result.txt . --zone=YOUR_GCE_ZONE
+    # Extract the GCS path from the copied file
+    BUILD_PATH=$(cat build_result.txt | grep GCS_BUILD_PATH | cut -d'=' -f2)
+    echo "Final GCS Build Path: $BUILD_PATH"
+    # This BUILD_PATH variable is echoed to Cloud Build logs, which your Python agent can parse.
