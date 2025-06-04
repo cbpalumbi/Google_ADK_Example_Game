@@ -2,7 +2,7 @@
 
 substitutions:
   _GCE_ZONE: 'us-central1-b'
-  _GCP_PROJECT_ID: 'cool-ruler-461702-p8'
+  _PROJECT_ID: 'cool-ruler-461702-p8' # Changed from _GCP_PROJECT_ID
   # _GCS_BUCKET_NAME is not needed for this simplified test
   # _UNITY_EDITOR_VERSION is not needed for this simplified test
   # _UNITY_PROJECT_NAME is not needed for this simplified test
@@ -17,10 +17,10 @@ steps:
   - |
     # This command uses the Cloud Build substitution for zone.
     # The inner command "echo 'Hello from GCE!'" contains no '$' symbols.
-    gcloud compute ssh unityadmin@unity-build-machine-windows2 --zone=${_GCE_ZONE} --command="echo 'Hello from GCE! This is a test.'"
+    gcloud compute ssh unityadmin@unity-build-machine-windows2 --zone=${_GCE_ZONE} --project=${_PROJECT_ID} --command="echo 'Hello from GCE! This is a test.'" # Changed from _GCP_PROJECT_ID
   env:
   - 'CLOUDSDK_COMPUTE_ZONE=${_GCE_ZONE}'
-  - 'CLOUDSDK_CORE_PROJECT=${_GCP_PROJECT_ID}'
+  - 'CLOUDSDK_CORE_PROJECT=${_PROJECT_ID}' # Changed from _GCP_PROJECT_ID
   # No other env vars needed for this test
 
 # logs_bucket is still required at the top level
