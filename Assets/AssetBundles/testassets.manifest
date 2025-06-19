@@ -1,16 +1,16 @@
 ManifestFileVersion: 0
 UnityVersion: 6000.0.50f1
-CRC: 3066310746
+CRC: 3088262276
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: abb03ec5991acf9705866186eddd98a7
+    Hash: a17e27a5e9b5aeb71868712e41cbb523
   TypeTreeHash:
     serializedVersion: 2
     Hash: 3219c50854ff2a782d7e36576b5dbf5b
   IncrementalBuildHash:
     serializedVersion: 2
-    Hash: da13e61111767e883a7856e1a0264e1c
+    Hash: 8d979f3c1750f2affdef6812518f9c0e
 HashAppended: 0
 ClassTypes:
 - Class: 1
@@ -32,5 +32,4 @@ ClassTypes:
 SerializeReferenceClassIdentifiers: []
 Assets:
 - Assets/TestAssets/pomegranate_fruit.glb
-- Assets/TestAssets/reflection_cube.glb
 Dependencies: []

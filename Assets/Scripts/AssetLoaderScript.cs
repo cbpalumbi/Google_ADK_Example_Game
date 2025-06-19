@@ -1,75 +1,84 @@
 using UnityEngine;
-using System.IO; 
-using System.Linq; 
+using System.IO;
+using System.Linq;
+using System.Collections;
+using System.Collections.Generic; 
 
 public class AssetBundleLoader : MonoBehaviour
 {
-    // IMPORTANT: Replace this with the *exact* name of the prefab you want to load from your bundle.
-    // This is the name you gave it in Unity's Project window when creating the prefab,
-    // or the name of the main FBX asset if you're loading it directly.
-    public string prefabNameToLoad = "apple";
+    // distance between spawned objects
+    public float spacing = 3.0f;
 
     void Start()
     {
-        // 1. Get all command-line arguments
-        string[] args = System.Environment.GetCommandLineArgs();
+        string rootDirectoryForExternalBundles;
 
-        string bundlePath = "Assets/AssetBundles/testassets";
+        if (Application.platform == RuntimePlatform.OSXPlayer)
+        {
+            // On macOS, Application.dataPath is YourGame.app/Contents/
+            // Path.GetDirectoryName(Application.dataPath) gives YourGame.app/
+            // Calling Path.GetDirectoryName again gives the folder containing YourGame.app
+            rootDirectoryForExternalBundles = Path.GetDirectoryName(Path.GetDirectoryName(Application.dataPath));
+        }
+        else
+        {
+            // On Windows, Application.dataPath is YourGame_Data/
+            // Path.GetDirectoryName(Application.dataPath) gives the folder containing YourGame.exe
+            rootDirectoryForExternalBundles = Path.GetDirectoryName(Application.dataPath);
+        }
 
-        LoadAssetBundleFromFile(bundlePath);
+        string myBundlesFolder = Path.Combine(rootDirectoryForExternalBundles, "MyAssetBundles");
+
+
+        List<string> bundlesToLoad = new List<string> { "assets", "userassets" }; 
+
+        AssetBundle masterBundle = AssetBundle.LoadFromFile(Path.Combine(myBundlesFolder, bundlesToLoad[0]));
+
+        string bundlePath = Path.Combine(myBundlesFolder, bundlesToLoad[1]);
+        Debug.Log($"Loading AssetBundle from: {bundlePath}");
+        LoadAndInstantiateAllGameObjects(bundlePath);
+        
     }
 
-    private void LoadAssetBundleFromFile(string path)
+    private void LoadAndInstantiateAllGameObjects(string path)
     {
-        // Ensure the file exists before trying to load it
         if (!File.Exists(path))
         {
-            Debug.LogError($"Asset Bundle file not found at: {path}");
+            Debug.LogError($"AssetBundle not found at: {path}");
             return;
         }
 
-        AssetBundle loadedBundle = null;
-        try
+        AssetBundle bundle = AssetBundle.LoadFromFile(path);
+        if (bundle == null)
         {
-            // Load the Asset Bundle from the specified file path
-            loadedBundle = AssetBundle.LoadFromFile(path);
-        }
-        catch (System.Exception e)
-        {
-            Debug.LogError($"Failed to load Asset Bundle from {path}. Error: {e.Message}");
+            Debug.LogError("Failed to load AssetBundle.");
             return;
         }
 
-        if (loadedBundle == null)
+        string[] assetNames = bundle.GetAllAssetNames();
+        int count = 0;
+
+        foreach (string assetName in assetNames)
         {
-            Debug.LogError("Failed to load Asset Bundle! Is the path correct and the bundle valid?");
-            return;
+            GameObject obj = bundle.LoadAsset<GameObject>(assetName);
+            if (obj != null)
+            {
+                Vector3 position = new Vector3(count * spacing, 0, 0);
+                Instantiate(obj, position, Quaternion.identity);
+                Debug.Log($"Instantiated '{obj.name}' at {position}");
+                count++;
+            }
+            else
+            {
+                Debug.LogWarning($"Skipping non-GameObject asset: {assetName}");
+            }
         }
 
-        Debug.Log($"Asset Bundle '{loadedBundle.name}' loaded successfully.");
-
-        // 3. Load and instantiate the prefab from the loaded bundle
-        GameObject prefab = loadedBundle.LoadAsset<GameObject>(prefabNameToLoad);
-
-        if (prefab == null)
+        if (count == 0)
         {
-            Debug.LogError($"Failed to load prefab '{prefabNameToLoad}' from Asset Bundle '{loadedBundle.name}'. " +
-                           "Please ensure the prefab name is correct and it was included in the bundle.");
-            // Useful for debugging: list all asset names within the bundle
-            Debug.Log("Assets found in bundle: " + string.Join(", ", loadedBundle.GetAllAssetNames()));
-            loadedBundle.Unload(false); // Unload the bundle if the target prefab isn't found
-            return;
+            Debug.LogWarning("No GameObjects were loaded from the bundle.");
         }
 
-        // Instantiate the loaded prefab into the scene
-        Instantiate(prefab, Vector3.zero, Quaternion.identity); // Place at origin, no rotation
-        Debug.Log($"Prefab '{prefab.name}' instantiated from bundle.");
-
-        // IMPORTANT: Decide if you want to unload the bundle immediately.
-        // If you unload with 'true', all assets loaded from it will also be destroyed.
-        // If you unload with 'false', instantiated objects will remain, but their references
-        // to the bundle's internal data might be broken if you later try to load more.
-        // For a simple viewer, you might keep it loaded or unload if no more assets are needed.
-        // loadedBundle.Unload(false);
+        bundle.Unload(false);
     }
 }
