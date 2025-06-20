@@ -63,7 +63,7 @@ public class AssetBundleLoader : MonoBehaviour
             GameObject obj = bundle.LoadAsset<GameObject>(assetName);
             if (obj != null)
             {
-                Vector3 position = new Vector3(count * spacing, 0, 0);
+                Vector3 position = new Vector3(count * spacing, 1, 0);
                 Instantiate(obj, position, Quaternion.identity);
                 Debug.Log($"Instantiated '{obj.name}' at {position}");
                 count++;

@@ -7,6 +7,7 @@ public class AssetBundleScript
 {
     public static void BuildAssetBundleForUploadedGLBs()
     {
+        
         // 1. Read args to get session ID
         string[] args = System.Environment.GetCommandLineArgs();
         
@@ -100,7 +101,7 @@ public class AssetBundleScript
         BuildPipeline.BuildAssetBundles(
             bundleOutputPath,
             BuildAssetBundleOptions.None,
-            BuildTarget.StandaloneOSX // StandaloneOSX or StandaloneWindows64
+            BuildTarget.StandaloneWindows64 // StandaloneOSX or StandaloneWindows64
         );
 
         Debug.Log($"AssetBundle built at: {Path.Combine(bundleOutputPath, "uploadedassets")}");
