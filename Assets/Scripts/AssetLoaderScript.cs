@@ -8,9 +8,15 @@ public class AssetBundleLoader : MonoBehaviour
 {
     // distance between spawned objects
     public float spacing = 3.0f;
+    public Vector3 colliderCenterOffset = Vector3.zero;
+    public float colliderRadiusMultiplier = 1.0f;
 
     void Start()
     {
+#if UNITY_EDITOR
+        Debug.Log("Exiting asset loader early because we are running in the editor");
+        return;
+#endif
         string rootDirectoryForExternalBundles;
 
         if (Application.platform == RuntimePlatform.OSXPlayer)
@@ -64,9 +70,52 @@ public class AssetBundleLoader : MonoBehaviour
             if (obj != null)
             {
                 Vector3 position = new Vector3(count * spacing, 1, 0);
-                Instantiate(obj, position, Quaternion.identity);
+                GameObject instantiated = Instantiate(obj, position, Quaternion.identity);
                 Debug.Log($"Instantiated '{obj.name}' at {position}");
                 count++;
+
+                Rigidbody rb = instantiated.GetComponent<Rigidbody>();
+                if (rb == null)
+                {
+                    rb = instantiated.AddComponent<Rigidbody>();
+                }
+
+                SphereCollider sc = instantiated.GetComponent<SphereCollider>();
+                if (sc == null)
+                {
+                    sc = instantiated.AddComponent<SphereCollider>();
+                }
+
+                Renderer[] renderers = instantiated.GetComponentsInChildren<Renderer>();
+
+                if (renderers.Length > 0)
+                {
+                    // Initialize bounds with the first renderer's bounds
+                    Bounds combinedBounds = renderers[0].bounds;
+
+                    // Encapsulate all other renderers' bounds into the combined bounds
+                    for (int i = 1; i < renderers.Length; i++)
+                    {
+                        combinedBounds.Encapsulate(renderers[i].bounds);
+                    }
+
+                    float maxDimension = combinedBounds.extents.magnitude;
+
+                    // Set the SphereCollider's radius and center
+                    sc.radius = maxDimension * colliderRadiusMultiplier;
+                    // The center of the collider should be relative to the GameObject's local origin.
+                    // We need to convert the world-space combinedBounds.center to local space.
+                    sc.center = transform.InverseTransformPoint(combinedBounds.center) + colliderCenterOffset;
+                }
+                else
+                {
+                    // If no renderers are found, the SphereCollider will keep its default size (radius = 0.5, center = 0,0,0)
+                    // You might want to set a default sensible size here if renderers are optional.
+                    sc.radius = 0.5f * colliderRadiusMultiplier; // Example default
+                    sc.center = colliderCenterOffset;
+                }
+
+
             }
             else
             {
