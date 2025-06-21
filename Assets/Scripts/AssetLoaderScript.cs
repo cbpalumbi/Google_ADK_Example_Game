@@ -74,6 +74,8 @@ public class AssetBundleLoader : MonoBehaviour
                 Debug.Log($"Instantiated '{obj.name}' at {position}");
                 count++;
 
+
+                instantiated.AddComponent<ArrowKeyRotator>();
                 /*
                 Rigidbody rb = instantiated.GetComponent<Rigidbody>();
                 if (rb == null)
