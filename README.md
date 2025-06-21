@@ -1,0 +1,1 @@
+This is the Unity game project repository for my ADK Hackathon entry. 
